@@ -3,36 +3,67 @@ name: Build Poultry Shop APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-22.04
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.10"
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config \
-            zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+          sudo apt-get install -y \
+            git \
+            zip \
+            unzip \
+            openjdk-17-jdk \
+            python3-pip \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            zlib1g-dev \
+            libncurses5-dev \
+            libncursesw5-dev \
+            libtinfo5 \
+            cmake \
+            libffi-dev \
+            libssl-dev
 
-      - name: Install buildozer
-        run: pip install --upgrade buildozer cython==0.29.36
+      - name: Install Python build dependencies
+        run: |
+          python -m pip install --upgrade "pip<24"
+          python -m pip install "setuptools<70" wheel
+          python -m pip install "cython==0.29.36"
 
-      - name: Fix pip compatibility for pythonforandroid
-        run: pip install "pip==23.0.1" setuptools
+      - name: Install Buildozer
+        run: |
+          python -m pip install "buildozer==1.6.0"
+
+      - name: Verify build environment
+        run: |
+          python --version
+          python -m pip --version
+          buildozer --version
+          cython --version
 
       - name: Build APK with Buildozer
-        run: buildozer -v android debug
+        run: |
+          buildozer -v android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: poultry-shop-apk
           path: bin/*.apk
+          if-no-files-found: error
